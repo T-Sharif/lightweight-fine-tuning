@@ -1,40 +1,13 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Lightweight Fine-Tuning Project
-
-# PEFT technique: I used LoRA (Low-Rank) configuration. I evaluated the BERT model initially and then fine-tuned it on a subset of the BBC News (SetFit/bbc-news) dataset from Hugging Face. The fine-tuning process adapts the model more closely to the task.
-# 
-# Model: The base model I used is "bert-base-uncased". This model is utilized for both the initial evaluation and the PEFT process (training and evaluation.
-# 
-# Evaluation approach: The evaluation is performed using the Trainer class from the Hugging Face's Transformers library. The evaluation strategy is set to "epoch," meaning an evaluation is oerformed after each training epoch. The evaluation metric is accuracy.
-# 
-# Fine-tuning dataset: The fine-tuning dataset is the BBC News (SetFit/bbc-news) dataset from Hugging Face. To expedite the process, I used a subset of 1000 samples from the dataset. The dataset is pre-proceesed using the "bert-base-uncased" tokenizer.
-
-# ## Loading and Evaluating a Foundation Model
-# 
-# Load a pre-trained Hugging Face model and evaluate its performance prior to fine-tuning.
-
-# In[1]:
-
-
 get_ipython().system('pip install -q "datasets==2.15.0"')
 get_ipython().system('pip install datasets transformers')
 get_ipython().system('pip install tabulate')
 
-
-# In[2]:
-
-
+#Loading and Evaluating a Foundation Model
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments, DataCollatorWithPadding
 from tabulate import tabulate
 import numpy as np
 import pandas as pd
-
-
-# In[3]:
-
 
 # load the dataset
 dataset = load_dataset("SetFit/bbc-news")
@@ -81,10 +54,6 @@ evaluation_strategy = "epoch",
 save_strategy="epoch",
 load_best_model_at_end=True)
 
-
-# In[4]:
-
-
 # trainer for pre fine-tuning evaluation
 trainer = Trainer(
 model=model,
@@ -94,16 +63,8 @@ eval_dataset=small_tokenized_test,
 data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
 compute_metrics=compute_metrics)
 
-
-# In[5]:
-
-
 # evaluate before fine-tuning
 pre_eval_results = trainer.evaluate()
-
-
-# In[6]:
-
 
 # create a table for a more readable result
 # referenced a website to create the table
@@ -115,10 +76,6 @@ df_results = pd.DataFrame.from_dict(pre_eval_results, orient="index")
 formatted_df = tabulate(df_results, tablefmt="presto")
 
 print(f"Pre-Fine-Tuning Evaluation Results:\n \n{formatted_df}")
-
-
-# In[7]:
-
 
 # create a dataset for visual review with the text, predictions, and labels
 visual_review = small_tokenized_test.select([0, 5, 34, 85, 107, 268, 436])
@@ -136,19 +93,9 @@ df = pd.DataFrame({
 pd.set_option("display.max_colwidth", 80)
 df
 
-
-# ## Performing Parameter-Efficient Fine-Tuning
-# 
-# Create a PEFT model from the loaded model, run a training loop, and save the PEFT model weights.
-
-# In[8]:
-
+#Performing Parameter-Efficient Fine-Tuning
 
 from peft import LoraConfig, get_peft_model, TaskType
-
-
-# In[9]:
-
 
 # initialize LoraConfig and loaded model
 # Referenced a website to get the LoRA Configuration
@@ -185,10 +132,6 @@ num_train_epochs = 5,
 weight_decay=0.01,
 load_best_model_at_end = True)
 
-
-# In[10]:
-
-
 # trainer for the Peft model with smaller datasets
 lora_trainer = Trainer(
     model=lora_model,
@@ -198,57 +141,27 @@ lora_trainer = Trainer(
     data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
     compute_metrics=compute_metrics)
 
-
-# In[11]:
-
-
 # train the model
 lora_trainer.train()
-
-
-# In[12]:
-
 
 # save the PEFT model weights
 lora_model.save_pretrained("bert-lora")
 
-
-# ## Performing Inference with a PEFT Model
-# 
-# Load the saved PEFT model weights and evaluate the performance of the trained PEFT model.
-
-# In[13]:
-
+# Performing Inference with a PEFT Model
 
 from peft import AutoPeftModelForSequenceClassification
-
-
-# In[14]:
-
 
 # load the saved PEFT model
 lora_model = AutoPeftModelForSequenceClassification.from_pretrained("bert-lora", num_labels=5)
 
-
-# In[15]:
-
-
 # evaluate the PEFT model
 post_eval_results = lora_trainer.evaluate()
-
-
-# In[16]:
-
 
 df_results = pd.DataFrame.from_dict(post_eval_results, orient="index")
 
 formatted_df = tabulate(df_results, tablefmt="plain")
 
 print(f"Post-Fine-Tuning Evaluation Results:\n{formatted_df}")
-
-
-# In[17]:
-
 
 # create a dataset for visual review with the text, predictions, and labels
 visual_review = small_tokenized_test.select([0, 5, 34, 85, 107, 268, 436])
@@ -264,10 +177,6 @@ df = pd.DataFrame({
 pd.set_option("display.max_colwidth", 80)
 df
 
-
-# In[20]:
-
-
 # create dataframe for accuracy comparison
 comparison_dict = {
     "Metrics": ["Accuracy"],
@@ -281,6 +190,3 @@ df_results = pd.DataFrame.from_dict(comparison_dict, orient="index")
 formatted_df = tabulate(df_results, tablefmt="plain")
 
 print(f"Comparison of Pre-Fine-Tuning and Post-Fine-Tuning Evaluation Results:\n\n{formatted_df}")
-
-
-# The PEFT model had a much higher accuracy than the model before fine-tuning. The model drastically improved from having an 20.2% accuracy before fine-tuning to having a 98% accuracy after fine-tuning.
