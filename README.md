@@ -1,4 +1,4 @@
-# Lightweight Fine-Tuning A Foundational Model
+# Lightweight Fine-Tuning a Foundational Model
 This project demonstrates how to perform parameter-efficient fine-tuning (PEFT) using the Hugging Face *PEFT* library. Lightweight fine-tuning is crucial for adapting large foundation models to specific tasks without requiring extensive computational resources. By leveraging parameter-efficient methods, you can effectively tailor models to your needs while conserving resources. This project provides a hands-on approach to integrating PEFT techniques into a PyTorch and Hugging Face workflow, including model evaluation, fine-tuning, and inference. 
 
 ### Project Summary
